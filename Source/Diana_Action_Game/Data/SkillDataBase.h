@@ -56,6 +56,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	bool CanCombo;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info", meta = (EditCondition = "CanCombo"))
+	int32 ComboCount = 0;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	bool UseInAir;
 
@@ -64,6 +67,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	float Damage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
+	FName SocketName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
+	FVector BoxSize;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Test")
+	bool IsLaunch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Test", meta = (EditCondition = "IsLaunch"))
+	FVector LaunchVector;
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Skill Logic")

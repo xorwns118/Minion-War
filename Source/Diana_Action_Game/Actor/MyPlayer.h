@@ -49,6 +49,8 @@ public:
 
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& _Other) const override;
 
+	virtual float TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser) override;
+
 public:
 	AMyPlayer();
 };

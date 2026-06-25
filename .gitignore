@@ -77,3 +77,9 @@ DerivedDataCache/*
 # Large marketplace/content assets
 Content/Diana/
 Content/ParagonMinions/
+
+# Large VFX/content assets
+Content/Free_Spells/
+Content/SwordTrailVFX/
+Content/__ExternalActors__/Free_Spells/
+Content/__ExternalObjects__/Free_Spells/
