@@ -116,6 +116,17 @@ void AMyPlayer::MoveAction(const FInputActionValue& _Value)
 	}
 }
 
+
+float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser)
+{
+	Super::TakeDamage(_DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
+
+	float Damage = _DamageAmount;
+
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage %f"), Damage);
+	return Damage;
+}
+
 void AMyPlayer::LookAction(const FInputActionValue& _Value)
 {
 	FVector2D LookAxisVector = _Value.Get<FVector2D>();

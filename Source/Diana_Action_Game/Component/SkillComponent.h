@@ -15,6 +15,7 @@ enum class ESkillSlot : uint8
 	Skill_1 UMETA(DisplayName = "Skill 1"),
 	Skill_2 UMETA(DisplayName = "Skill 2"),
 	Skill_3 UMETA(DisplayName = "Skill 3"),
+	Skill_4 UMETA(DisplayName = "Skill 4"),
 
 	End UMETA(Hidden)
 };
@@ -44,11 +45,18 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TSoftObjectPtr<class USkillDataBase>	CurSkillData;
 
+	UPROPERTY()
+	class USkeletalMeshComponent*			SkeletalMeshCom;
 
 private:
-	TMap<FPrimaryAssetId, float>			mapSkillCoolTime;
+	TMap<FPrimaryAssetId, float>	mapSkillCoolTime;
 
-	bool IsComboWindowOn;
+	bool							IsComboWindowOn;
+	int32							CurComboIdx;
+	
+	TSet<TWeakObjectPtr<AActor>>	HitActors;
+	FVector							PrevSocketLocation;
+	
 
 protected:
 	virtual void BeginPlay() override;

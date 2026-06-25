@@ -14,6 +14,8 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GenericTeamAgentInterface.h"
 
+#include "GameFramework/Character.h"
+
 #include "../Container/InputContainer.h"
 #include "../Data/SkillDataBase.h"
 
@@ -32,6 +34,8 @@ void USkillComponent::BeginPlay()
 	Super::BeginPlay();
 	
 	LoadSkill();
+
+	SkeletalMeshCom = GetOwner()->GetComponentByClass<USkeletalMeshComponent>();
 }
 
 void USkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -83,19 +87,48 @@ bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 	{
 		if (CurSkillData == nullptr)
 		{
-			CurSkillData = SkillSlots[_SlotIdx].SkillData;
-
-			CurSkillData->OnExecuteSkill(OwnerPawn, this);
-		}
-		else
-		{
-			if (CurSkillData->CanCombo)
+			if (SkillSlots[_SlotIdx].SkillData->CanUseSkill(Cast<APawn>(GetOwner()), this))
 			{
-				IsComboWindowOn = true;
+				// 콤보 초기화
+				IsComboWindowOn = false;
+				CurComboIdx = 0;
+
+				// 현재 사용중인 스킬 등록
+				CurSkillData = SkillSlots[_SlotIdx].SkillData;
+
+				// 스킬 실행
+				CurSkillData->OnExecuteSkill(Cast<APawn>(GetOwner()), this);
+
+				return true;
+			}
+			else
+				return false;
+		}
+		else if (SkillSlots[_SlotIdx].SkillData == CurSkillData)
+		{
+			if (CurSkillData->CanCombo && IsComboWindowOn)
+			{
+				++CurComboIdx;
+
+				FName NextSection = *FString::Printf(TEXT("Attack%d"), CurComboIdx);
+
+				if (SkeletalMeshCom && SkeletalMeshCom->GetAnimInstance() && SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage())
+				{
+					if (SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage()->GetSectionIndex(NextSection) != INDEX_NONE)
+					{
+						SkeletalMeshCom->GetAnimInstance()->Montage_JumpToSection(NextSection);
+						IsComboWindowOn = false;
+
+						return true;
+					}
+					else
+					{
+						UE_LOG(LogTemp, Error, TEXT("Invalid montage section : %s"), *NextSection.ToString());
+						return false;
+					}
+				}
 			}
 		}
-
-		return true;
 	}
 
 	return false;
@@ -116,30 +149,122 @@ void USkillComponent::SkillEnd()
 
 void USkillComponent::OpenComboWindow()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Combo Opened"));
+	IsComboWindowOn = true;
 }
 
 void USkillComponent::CloseComboWindow()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Combo Closed"));
+	IsComboWindowOn = false;
 }
 
 void USkillComponent::HitCheckStart()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit Check Start"));
+	if (CurSkillData == nullptr)
+		return;
+
+	if (SkeletalMeshCom == nullptr)
+		return;
+
+	if (CurSkillData->SkillType == ESkillType::BUFF)
+		return;
+
+	PrevSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
 }
 
 void USkillComponent::HitCheck()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit Checking"));
+	if (CurSkillData == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Skill Data does not exist."));
+		return;
+	}
+
+	if (SkeletalMeshCom == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Skeletal Mesh Component does not exist."));
+		return;
+	}
+
+	APawn* SkillUser = Cast<APawn>(GetOwner());
+	if (SkillUser == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Skill User does not exist."));
+		return;
+	}
+
+	if (!SkeletalMeshCom->DoesSocketExist(CurSkillData->SocketName))
+	{
+		FString SocketName = CurSkillData->SocketName.ToString();
+		UE_LOG(LogTemp, Error, TEXT("Socket(%s) does not exist."), *SocketName);
+		return;
+	}
+
+	FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
+	FQuat BoxRotation = SkeletalMeshCom->GetSocketQuaternion(CurSkillData->SocketName);
+	TArray<FHitResult> HitResults;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+
+	FCollisionShape Shape = FCollisionShape::MakeBox(CurSkillData->BoxSize);
+
+	bool bIsHit = GetWorld()->SweepMultiByChannel(
+		HitResults,
+		PrevSocketLocation,
+		CurSocketLocation,
+		BoxRotation,
+		ECC_WorldDynamic,
+		Shape,
+		Params
+	);
+
+	if (bIsHit)
+	{
+		for (const FHitResult& Result : HitResults)
+		{
+			AActor* HitActor = Result.GetActor();
+
+			if (HitActor && !HitActors.Contains(HitActor))
+			{
+				HitActors.Add(HitActor);
+
+				// 같은 팀인지 확인하는 과정 추가 필요 - 테스트 후 구현
+				UGameplayStatics::ApplyDamage(
+					Result.GetActor(),
+					CurSkillData->Damage,
+					SkillUser->GetController(),
+					SkillUser,
+					UDamageType::StaticClass()
+				);
+
+				if (CurSkillData->HitEffect)
+				{
+					UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+						GetWorld(),
+						CurSkillData->HitEffect,
+						Result.ImpactPoint,
+						Result.ImpactNormal.Rotation()
+					);
+				}
+			}
+		}
+	}
+
+	DrawDebugBox(GetWorld(), CurSocketLocation, CurSkillData->BoxSize, FColor::Red);
+
+	PrevSocketLocation = CurSocketLocation;
 }
 
 void USkillComponent::HitCheckEnd()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit Check Finish"));
+	HitActors.Empty();
 }
 
 
+
+//================
+// 비동기 에셋 로딩
+//================
 
 void USkillComponent::LoadSkill()
 {
