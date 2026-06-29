@@ -35,6 +35,7 @@
 *.xcodeproj
 *.xcworkspace
 *.sln
+*.slnx
 *.suo
 *.opensdf
 *.sdf
@@ -83,3 +84,7 @@ Content/Free_Spells/
 Content/SwordTrailVFX/
 Content/__ExternalActors__/Free_Spells/
 Content/__ExternalObjects__/Free_Spells/
+
+# Codex local files
+AGENTS.md
+.codex-local/

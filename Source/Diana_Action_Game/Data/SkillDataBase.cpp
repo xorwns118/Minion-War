@@ -3,12 +3,10 @@
 
 #include "SkillDataBase.h"
 
-#include "../Component/SkillComponent.h"
-
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
 
-#include "GameFramework/CharacterMovementComponent.h"
+#include "../Component/SkillComponent.h"
 
 bool USkillDataBase::CanUseSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
@@ -34,17 +32,6 @@ void USkillDataBase::OnExecuteSkill_Implementation(APawn* _SkillUser, USkillComp
 		return;
 
 	Character->GetMesh()->GetAnimInstance()->Montage_Play(_SkillCom->GetCurSkillData()->Montage);
-
-	FRotator ActorRotation = _SkillUser->GetActorRotation();
-	FRotator YawRotation(0.0f, ActorRotation.Yaw, 0.0f);
-
-	// 2. 회전 값을 바탕으로 앞(X축방향)과 오른쪽(Y축방향) 벡터 구하기
-	FVector ForwardVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	FVector RightVector = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-
-	FVector vLaunch = (ForwardVector * LaunchVector.X) + (RightVector * LaunchVector.Y) + (FVector::UpVector * LaunchVector.Z);
-
-	Character->GetCharacterMovement()->Launch(vLaunch);
 }
 
 void USkillDataBase::OnEndSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)

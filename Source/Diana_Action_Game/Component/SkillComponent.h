@@ -10,12 +10,12 @@
 UENUM(BlueprintType)
 enum class ESkillSlot : uint8
 {
-	LeftClick UMETA(DisplayName = "Left Click"),
-	RightClick UMETA(DisplayName = "Right Click"),
-	Skill_1 UMETA(DisplayName = "Skill 1"),
-	Skill_2 UMETA(DisplayName = "Skill 2"),
-	Skill_3 UMETA(DisplayName = "Skill 3"),
-	Skill_4 UMETA(DisplayName = "Skill 4"),
+	LeftClick	UMETA(DisplayName = "Left Click"),
+	RightClick	UMETA(DisplayName = "Right Click"),
+	Skill_1		UMETA(DisplayName = "Skill 1"),
+	Skill_2		UMETA(DisplayName = "Skill 2"),
+	Skill_3		UMETA(DisplayName = "Skill 3"),
+	Skill_4		UMETA(DisplayName = "Skill 4"),
 
 	End UMETA(Hidden)
 };
@@ -57,6 +57,7 @@ private:
 	TSet<TWeakObjectPtr<AActor>>	HitActors;
 	FVector							PrevSocketLocation;
 	
+	float							BaseMoveSpeed;
 
 protected:
 	virtual void BeginPlay() override;
@@ -72,10 +73,7 @@ public:
 
 	void Bind(UEnhancedInputComponent* _EIC, class UInputContainer* _InputContainer);
 
-	void AddSkillUseTime(FPrimaryAssetId _Id)
-	{
-		mapSkillCoolTime.Add(_Id, GetWorld()->GetTimeSeconds());
-	}
+	void AddSkillUseTime(FPrimaryAssetId _Id) { mapSkillCoolTime.Add(_Id, GetWorld()->GetTimeSeconds()); }
 
 	bool IsSkillCoolTime(FPrimaryAssetId _Id, float _MaxCoolTime)
 	{
@@ -98,7 +96,7 @@ public:
 
 
 private:
-	bool SkillLoaded;
+	bool SkillLoaded = false;
 	TSharedPtr<FStreamableHandle> AsyncLoadHandle;
 
 	void LoadSkill();
@@ -114,6 +112,8 @@ public:
 	void HitCheckStart();
 	void HitCheck();
 	void HitCheckEnd();
+
+	void SpawnProjectile();
 
 public:
 	USkillComponent();

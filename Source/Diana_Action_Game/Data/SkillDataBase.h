@@ -38,6 +38,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Effect")
 	class UNiagaraSystem* HitEffect;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Effect")
+	class UNiagaraSystem* StartEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Effect")
+	FName StartSocketName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Effect")
+	class UNiagaraSystem* EndEffect;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Effect")
+	FName EndSocketName;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	float CoolTime;
 
@@ -56,9 +68,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	bool CanCombo;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info", meta = (EditCondition = "CanCombo"))
-	int32 ComboCount = 0;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	bool UseInAir;
 
@@ -73,12 +82,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
 	FVector BoxSize;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Test")
-	bool IsLaunch;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Test", meta = (EditCondition = "IsLaunch"))
-	FVector LaunchVector;
 
 public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Skill Logic")

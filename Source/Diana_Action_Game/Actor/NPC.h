@@ -5,27 +5,16 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "GenericTeamAgentInterface.h"
-#include "MyPlayer.generated.h"
+#include "NPC.generated.h"
 
 UCLASS()
-class DIANA_ACTION_GAME_API AMyPlayer : public ACharacter, public IGenericTeamAgentInterface
+class DIANA_ACTION_GAME_API ANPC : public ACharacter, public IGenericTeamAgentInterface
 {
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "SpringArm"))
-	class USpringArmComponent* SpringArmCom;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "CameraComponent"))
-	class UCameraComponent* CameraCom;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (DisplayName = "SkillComponent"))
 	class USkillComponent* SkillCom;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"), Instanced)
-	class UInputContainer* InputContainer;
-	
-	float BaseMoveSpeed;
 
 	FGenericTeamId TeamId;
 
@@ -37,7 +26,6 @@ protected:
 
 public:	
 	virtual void Tick(float DeltaTime) override;
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
 	virtual void SetGenericTeamId(const FGenericTeamId& _NewId) override { TeamId = _NewId; }
@@ -47,9 +35,5 @@ public:
 	virtual float TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser) override;
 
 public:
-	void MoveAction(const struct FInputActionValue& _Value);
-	void LookAction(const struct FInputActionValue& _Value);
-
-public:
-	AMyPlayer();
+	ANPC();
 };
