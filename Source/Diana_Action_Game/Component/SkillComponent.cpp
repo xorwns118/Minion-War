@@ -15,6 +15,7 @@
 #include "GenericTeamAgentInterface.h"
 
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "../Container/InputContainer.h"
 #include "../Data/SkillDataBase.h"
@@ -36,6 +37,12 @@ void USkillComponent::BeginPlay()
 	LoadSkill();
 
 	SkeletalMeshCom = GetOwner()->GetComponentByClass<USkeletalMeshComponent>();
+
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character != nullptr)
+		BaseMoveSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
+	else
+		UE_LOG(LogTemp, Error, TEXT("Owner does not character!! please check class"));
 }
 
 void USkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -136,13 +143,41 @@ bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 
 void USkillComponent::SkillStart()
 {
-	// 스킬 시작 시
+	if (CurSkillData == nullptr)
+		return;
+
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+
+	if (Character == nullptr)
+		return;
+
+	Character->GetCharacterMovement()->MaxWalkSpeed *= CurSkillData->MoveSpeedScale;
+
+	/*if (CurSkillData->TrailEffect != nullptr)
+	{
+		FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
+		FRotator BoxRotation = SkeletalMeshCom->GetSocketRotation(CurSkillData->SocketName);
+
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			CurSkillData->TrailEffect,
+			CurSocketLocation,
+			BoxRotation
+		);
+	}*/
 }
 
 void USkillComponent::SkillEnd()
 {
 	if (CurSkillData == nullptr)
 		return;
+
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+
+	if (Character == nullptr)
+		return;
+
+	Character->GetCharacterMovement()->MaxWalkSpeed = BaseMoveSpeed;
 
 	CurSkillData = nullptr;
 }
@@ -200,7 +235,7 @@ void USkillComponent::HitCheck()
 	}
 
 	FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
-	FQuat BoxRotation = SkeletalMeshCom->GetSocketQuaternion(CurSkillData->SocketName);
+	FQuat BoxQuat = SkeletalMeshCom->GetSocketQuaternion(CurSkillData->SocketName);
 	TArray<FHitResult> HitResults;
 
 	FCollisionQueryParams Params;
@@ -212,7 +247,7 @@ void USkillComponent::HitCheck()
 		HitResults,
 		PrevSocketLocation,
 		CurSocketLocation,
-		BoxRotation,
+		BoxQuat,
 		ECC_WorldDynamic,
 		Shape,
 		Params
@@ -258,6 +293,10 @@ void USkillComponent::HitCheck()
 void USkillComponent::HitCheckEnd()
 {
 	HitActors.Empty();
+}
+
+void USkillComponent::SpawnProjectile()
+{
 }
 
 

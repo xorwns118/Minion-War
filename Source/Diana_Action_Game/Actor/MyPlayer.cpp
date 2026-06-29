@@ -41,10 +41,10 @@ AMyPlayer::AMyPlayer()
 
 	InputContainer = CreateDefaultSubobject<UInputContainer>(TEXT("InputContainer"));
 
-	MoveSpeedScale = 1.f;
-
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	GetCharacterMovement()->JumpZVelocity = 500.f;
+
+	BaseMoveSpeed = GetCharacterMovement()->MaxWalkSpeed;
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
@@ -58,7 +58,7 @@ void AMyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetGenericTeamId((uint8)0); // -> GlobalEnum 만들어서 Player, Enemy, Neutral 추가
+	SetGenericTeamId(0); // -> GlobalEnum 만들어서 Player, Enemy, Neutral 추가
 }
 
 void AMyPlayer::Tick(float DeltaTime)
@@ -85,10 +85,18 @@ void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	}
 }
 
+float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser)
+{
+	Super::TakeDamage(_DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
+
+	float Damage = _DamageAmount;
+
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage %f"), Damage);
+	return Damage;
+}
+
 void AMyPlayer::MoveAction(const FInputActionValue& _Value)
 {
-	GetCharacterMovement()->MaxWalkSpeed *= MoveSpeedScale;
-
 	FVector2D vMovement = _Value.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -114,17 +122,6 @@ void AMyPlayer::MoveAction(const FInputActionValue& _Value)
 			AddMovementInput(DesiredDir, vMovement.Size());
 		}
 	}
-}
-
-
-float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AController* _EventInstigator, AActor* _DamageCauser)
-{
-	Super::TakeDamage(_DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
-
-	float Damage = _DamageAmount;
-
-	UE_LOG(LogTemp, Warning, TEXT("Take Damage %f"), Damage);
-	return Damage;
 }
 
 void AMyPlayer::LookAction(const FInputActionValue& _Value)
