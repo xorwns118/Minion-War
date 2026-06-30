@@ -4,6 +4,7 @@
 #include "Monster.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
 
 AMonster::AMonster()
 {

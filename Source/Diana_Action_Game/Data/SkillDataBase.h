@@ -14,6 +14,17 @@ enum class ESkillType : uint8
 	BUFF,
 };
 
+UENUM(BlueprintType)
+enum class EWeaponHitZone : uint8
+{
+	None			UMETA(DisplayName = "None Weapon"),
+	MainWeapon		UMETA(DisplayName = "Main Weapon"),
+	AssistWeapon	UMETA(DisplayName = "Assist Weapon"),
+	DualWeapon		UMETA(DisplayName = "Dual Weapon"),
+
+	End				UMETA(Hidden)
+};
+
 UCLASS()
 class DIANA_ACTION_GAME_API USkillDataBase : public UPrimaryDataAsset
 {
@@ -78,7 +89,13 @@ public:
 	float Damage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
-	FName SocketName;
+	EWeaponHitZone HitZone = EWeaponHitZone::None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
+	FName MainHitSocketName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
+	FName AssistHitSocketName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")
 	FVector BoxSize;

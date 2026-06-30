@@ -55,7 +55,7 @@ private:
 	int32							CurComboIdx;
 	
 	TSet<TWeakObjectPtr<AActor>>	HitActors;
-	FVector							PrevSocketLocation;
+	TMap<FName, FVector>			PrevSocketLocation;
 	
 	float							BaseMoveSpeed;
 
@@ -112,6 +112,8 @@ public:
 	void HitCheckStart();
 	void HitCheck();
 	void HitCheckEnd();
+
+	void HitTraceBySocketName(FName _SocketName);
 
 	void SpawnProjectile();
 

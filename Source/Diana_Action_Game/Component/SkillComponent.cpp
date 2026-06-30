@@ -153,18 +153,33 @@ void USkillComponent::SkillStart()
 
 	Character->GetCharacterMovement()->MaxWalkSpeed *= CurSkillData->MoveSpeedScale;
 
-	/*if (CurSkillData->TrailEffect != nullptr)
+	if (CurSkillData->StartEffect != nullptr)
 	{
-		FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
-		FRotator BoxRotation = SkeletalMeshCom->GetSocketRotation(CurSkillData->SocketName);
+		if (!SkeletalMeshCom->DoesSocketExist(CurSkillData->StartSocketName)) // Socket 없을 시 캐릭터의 위치에 이펙트 소환
+		{
+			FVector vLocation = Character->GetActorLocation();
+			vLocation.Z = 0.f; // 바닥 유지
 
-		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(),
-			CurSkillData->TrailEffect,
-			CurSocketLocation,
-			BoxRotation
-		);
-	}*/
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				CurSkillData->StartEffect,
+				vLocation,
+				FRotator()
+			);
+		}
+		else
+		{
+			FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->StartSocketName);
+			FRotator BoxRotation = SkeletalMeshCom->GetSocketRotation(CurSkillData->StartSocketName);
+
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				CurSkillData->StartEffect,
+				CurSocketLocation,
+				BoxRotation
+			);
+		}
+	}
 }
 
 void USkillComponent::SkillEnd()
@@ -203,7 +218,21 @@ void USkillComponent::HitCheckStart()
 	if (CurSkillData->SkillType == ESkillType::BUFF)
 		return;
 
-	PrevSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
+	switch (CurSkillData->HitZone)
+	{
+	case EWeaponHitZone::MainWeapon:
+		PrevSocketLocation.Add(CurSkillData->MainHitSocketName, SkeletalMeshCom->GetSocketLocation(CurSkillData->MainHitSocketName));
+	break;
+	case EWeaponHitZone::AssistWeapon:
+		PrevSocketLocation.Add(CurSkillData->AssistHitSocketName, SkeletalMeshCom->GetSocketLocation(CurSkillData->AssistHitSocketName));
+	break;
+	case EWeaponHitZone::DualWeapon:
+		PrevSocketLocation.Add(CurSkillData->MainHitSocketName, SkeletalMeshCom->GetSocketLocation(CurSkillData->MainHitSocketName));
+		PrevSocketLocation.Add(CurSkillData->AssistHitSocketName, SkeletalMeshCom->GetSocketLocation(CurSkillData->AssistHitSocketName));
+	break;
+	default:
+		break;
+	}
 }
 
 void USkillComponent::HitCheck()
@@ -220,6 +249,34 @@ void USkillComponent::HitCheck()
 		return;
 	}
 
+	switch (CurSkillData->HitZone)
+	{
+	case EWeaponHitZone::MainWeapon:
+		HitTraceBySocketName(CurSkillData->MainHitSocketName);
+		break;
+	case EWeaponHitZone::AssistWeapon:
+		HitTraceBySocketName(CurSkillData->AssistHitSocketName);
+		break;
+	case EWeaponHitZone::DualWeapon:
+		HitTraceBySocketName(CurSkillData->MainHitSocketName);
+		HitTraceBySocketName(CurSkillData->AssistHitSocketName);
+		break;
+	default:
+		break;
+	}
+}
+
+void USkillComponent::HitCheckEnd()
+{
+	HitActors.Empty();
+	PrevSocketLocation.Empty();
+}
+
+void USkillComponent::HitTraceBySocketName(FName _SocketName)
+{
+	if (GetOwner() == nullptr)
+		return;
+
 	APawn* SkillUser = Cast<APawn>(GetOwner());
 	if (SkillUser == nullptr)
 	{
@@ -227,15 +284,20 @@ void USkillComponent::HitCheck()
 		return;
 	}
 
-	if (!SkeletalMeshCom->DoesSocketExist(CurSkillData->SocketName))
+	if (!SkeletalMeshCom->DoesSocketExist(_SocketName))
 	{
-		FString SocketName = CurSkillData->SocketName.ToString();
-		UE_LOG(LogTemp, Error, TEXT("Socket(%s) does not exist."), *SocketName);
+		UE_LOG(LogTemp, Error, TEXT("Socket(%s) does not exist."), *_SocketName.ToString());
 		return;
 	}
 
-	FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->SocketName);
-	FQuat BoxQuat = SkeletalMeshCom->GetSocketQuaternion(CurSkillData->SocketName);
+	if (!PrevSocketLocation.Contains(_SocketName))
+	{
+		UE_LOG(LogTemp, Error, TEXT("Map does not contain socket(%s)."), *_SocketName.ToString());
+		return;
+	}
+
+	FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(_SocketName);
+	FQuat BoxQuat = SkeletalMeshCom->GetSocketQuaternion(_SocketName);
 	TArray<FHitResult> HitResults;
 
 	FCollisionQueryParams Params;
@@ -245,7 +307,7 @@ void USkillComponent::HitCheck()
 
 	bool bIsHit = GetWorld()->SweepMultiByChannel(
 		HitResults,
-		PrevSocketLocation,
+		PrevSocketLocation[_SocketName],
 		CurSocketLocation,
 		BoxQuat,
 		ECC_WorldDynamic,
@@ -287,12 +349,7 @@ void USkillComponent::HitCheck()
 
 	DrawDebugBox(GetWorld(), CurSocketLocation, CurSkillData->BoxSize, FColor::Red);
 
-	PrevSocketLocation = CurSocketLocation;
-}
-
-void USkillComponent::HitCheckEnd()
-{
-	HitActors.Empty();
+	PrevSocketLocation[_SocketName] = CurSocketLocation;
 }
 
 void USkillComponent::SpawnProjectile()
