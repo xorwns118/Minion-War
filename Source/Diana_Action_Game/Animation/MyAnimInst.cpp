@@ -10,6 +10,7 @@
 
 #include "../Actor/MyPlayer.h"
 #include "../Component/SkillComponent.h"
+#include "MonsterAnimInst.h"
 
 void UMyAnimInst::NativeInitializeAnimation()
 {

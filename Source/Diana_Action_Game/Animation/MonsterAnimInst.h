@@ -4,20 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "MyAnimInst.generated.h"
+#include "MonsterAnimInst.generated.h"
 
 UCLASS()
-class DIANA_ACTION_GAME_API UMyAnimInst : public UAnimInstance
+class DIANA_ACTION_GAME_API UMonsterAnimInst : public UAnimInstance
 {
 	GENERATED_BODY()
 
 protected:
 	UPROPERTY()
-	class AMyPlayer* Player;
-	
+	class AMonster* Monster;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	float	GroundSpeed;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool	IsCombat;
 
 public:
 	virtual void NativeInitializeAnimation() override;
