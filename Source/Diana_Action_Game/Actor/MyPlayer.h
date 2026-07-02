@@ -22,6 +22,9 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (DisplayName = "SkillComponent"))
 	class USkillComponent* SkillCom;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatComponent")
+	class UPlayerStatComponent* StatCom;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"), Instanced)
 	class UInputContainer* InputContainer;
 	

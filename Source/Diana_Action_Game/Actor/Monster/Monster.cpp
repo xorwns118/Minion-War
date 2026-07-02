@@ -6,18 +6,28 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
+#include "../../AI/AIController/MonAIController.h"
+#include "../../Component/MonStatComponent.h"
+#include "../../GlobalEnum.h"
+
 AMonster::AMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	GetCharacterMovement()->MaxWalkSpeed = 420.f;
+
+	AIControllerClass = AMonAIController::StaticClass();
+
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	StatCom = CreateDefaultSubobject<UMonStatComponent>(TEXT("StatComponent"));
 }
 
 void AMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetGenericTeamId(1);
+	SetGenericTeamId((uint8)ETeamType::Enemy);
 }
 
 void AMonster::Tick(float DeltaTime)

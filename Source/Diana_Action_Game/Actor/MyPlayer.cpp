@@ -15,6 +15,9 @@
 
 #include "../Container/InputContainer.h"
 #include "../Component/SkillComponent.h"
+#include "../Component/PlayerStatComponent.h"
+
+#include "../GlobalEnum.h"
 
 AMyPlayer::AMyPlayer()
 {
@@ -37,7 +40,7 @@ AMyPlayer::AMyPlayer()
 
 	SkillCom = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 
-	// StatCom = CreateDefaultSubobject<UPlayerStatComponent>(TEXT("StatComponent"));
+	StatCom = CreateDefaultSubobject<UPlayerStatComponent>(TEXT("StatComponent"));
 
 	InputContainer = CreateDefaultSubobject<UInputContainer>(TEXT("InputContainer"));
 
@@ -58,7 +61,7 @@ void AMyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SetGenericTeamId(0); // -> GlobalEnum 만들어서 Player, Enemy, Neutral 추가
+	SetGenericTeamId((uint8)ETeamType::Player);
 }
 
 void AMyPlayer::Tick(float DeltaTime)

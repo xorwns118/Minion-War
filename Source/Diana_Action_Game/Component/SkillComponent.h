@@ -117,6 +117,9 @@ public:
 
 	void SpawnProjectile();
 
+protected:
+	bool IsValidSocket(class USkeletalMeshComponent* _SkeletalMeshCom, FName _Name);
+
 public:
 	USkillComponent();
 

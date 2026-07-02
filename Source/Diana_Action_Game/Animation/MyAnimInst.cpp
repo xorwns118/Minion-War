@@ -44,3 +44,8 @@ void UMyAnimInst::AnimNotify_SkillEnd()
 {
 	Player->GetSkillCom()->SkillEnd();
 }
+
+void UMyAnimInst::AnimNotify_SpawnProjectile()
+{
+	Player->GetSkillCom()->SpawnProjectile();
+}
