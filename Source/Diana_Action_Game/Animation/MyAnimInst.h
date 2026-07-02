@@ -29,4 +29,7 @@ public:
 
 	UFUNCTION()
 	void AnimNotify_SkillEnd();
+
+	UFUNCTION()
+	void AnimNotify_SpawnProjectile();
 };

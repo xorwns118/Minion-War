@@ -18,7 +18,9 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "../Container/InputContainer.h"
+#include "../Projectile/Projectile.h"
 #include "../Data/SkillDataBase.h"
+#include "../Data/SkillData_Projectile.h"
 
 USkillComponent::USkillComponent()
 {
@@ -151,7 +153,10 @@ void USkillComponent::SkillStart()
 	if (Character == nullptr)
 		return;
 
-	Character->GetCharacterMovement()->MaxWalkSpeed *= CurSkillData->MoveSpeedScale;
+	if (!CurSkillData->CanMove)
+		Character->GetCharacterMovement()->MaxWalkSpeed = 0.f;
+	else
+		Character->GetCharacterMovement()->MaxWalkSpeed *= CurSkillData->MoveSpeedScale;
 
 	if (CurSkillData->StartEffect != nullptr)
 	{
@@ -284,17 +289,14 @@ void USkillComponent::HitTraceBySocketName(FName _SocketName)
 		return;
 	}
 
-	if (!SkeletalMeshCom->DoesSocketExist(_SocketName))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Socket(%s) does not exist."), *_SocketName.ToString());
-		return;
-	}
-
 	if (!PrevSocketLocation.Contains(_SocketName))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Map does not contain socket(%s)."), *_SocketName.ToString());
 		return;
 	}
+
+	if (!IsValidSocket(SkeletalMeshCom, _SocketName))
+		return;
 
 	FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(_SocketName);
 	FQuat BoxQuat = SkeletalMeshCom->GetSocketQuaternion(_SocketName);
@@ -354,7 +356,47 @@ void USkillComponent::HitTraceBySocketName(FName _SocketName)
 
 void USkillComponent::SpawnProjectile()
 {
+	USkillData_Projectile* ProjData = Cast<USkillData_Projectile>(CurSkillData.Get());
+	if (ProjData == nullptr)
+		return;
+
+	TSubclassOf<AProjectile> Proj = ProjData->ProjectileClass;
+	if (Proj == nullptr)
+		return;
+
+	if (!IsValidSocket(SkeletalMeshCom, ProjData->SpawnSocketName))
+		return;
+	
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+	SpawnParams.Owner = GetOwner();
+	SpawnParams.Instigator = Cast<APawn>(GetOwner());
+
+	FVector SpawnSocketLocation = SkeletalMeshCom->GetSocketLocation(ProjData->SpawnSocketName);
+	FRotator SpawnSocketRotation = FRotator(0, GetOwner()->GetActorRotation().Yaw, 0);
+
+	AProjectile* SpawnedProjectile = GetWorld()->SpawnActor<AProjectile>(
+		Proj,
+		SpawnSocketLocation,
+		SpawnSocketRotation,
+		SpawnParams
+	);
+
+	SpawnedProjectile->SetData(ProjData);
 }
+
+bool USkillComponent::IsValidSocket(USkeletalMeshComponent* _SkeletalMeshCom, FName _Name)
+{
+	if (_SkeletalMeshCom == nullptr || _Name.IsNone())
+		return false;
+
+	if (_SkeletalMeshCom->DoesSocketExist(_Name))
+		return true;
+	
+	UE_LOG(LogTemp, Error, TEXT("Socket(%s) does not exist."), *_Name.ToString());
+	return false;
+}
+
 
 
 

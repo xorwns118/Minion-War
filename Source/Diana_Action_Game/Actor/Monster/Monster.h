@@ -12,7 +12,8 @@ class DIANA_ACTION_GAME_API AMonster : public ANPC
 	GENERATED_BODY()
 
 protected:
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatComponent")
+	class UMonStatComponent* StatCom;
 
 protected:
 	virtual void BeginPlay() override;
