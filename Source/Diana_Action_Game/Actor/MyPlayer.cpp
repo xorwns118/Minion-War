@@ -94,7 +94,7 @@ float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEven
 
 	float Damage = _DamageAmount;
 
-	UE_LOG(LogTemp, Warning, TEXT("Take Damage %f"), Damage);
+	UE_LOG(LogTemp, Warning, TEXT("%s, Take Damage %f"), *GetActorNameOrLabel(), Damage);
 	return Damage;
 }
 

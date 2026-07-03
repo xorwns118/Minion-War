@@ -41,9 +41,7 @@ AMonAIController::AMonAIController()
 	DamageConfig = CreateDefaultSubobject<UAISenseConfig_Damage>(TEXT("Damage"));
 
 	if (DamageConfig)
-	{
 		PerceptionCom->ConfigureSense(*DamageConfig);
-	}
 
 	PerceptionCom->OnTargetPerceptionUpdated.AddDynamic(this, &AMonAIController::OnTargetDetected);
 }
@@ -100,7 +98,6 @@ void AMonAIController::OnTargetDetected(AActor* _Target, FAIStimulus _Stimulus)
 	if (_Target == nullptr)
 		return;
 
-	// 빙의한 몬스터의 적대관계 기준으로, 인지한 대상이 적인지 판단
 	AMonster* Monster = Cast<AMonster>(GetPawn());
 	if (Monster == nullptr)
 		return;
@@ -124,7 +121,7 @@ void AMonAIController::OnTargetDetected(AActor* _Target, FAIStimulus _Stimulus)
 
 		if (Info == nullptr && !_Stimulus.WasSuccessfullySensed())
 		{
-			UE_LOG(LogTemp, Error, TEXT("SkillComponent::OnTargetDeceted() [How the hell did this get in????]"));
+			UE_LOG(LogTemp, Error, TEXT("SkillComponent::OnTargetDeceted() : ????????"));
 			return;
 		}
 
@@ -132,9 +129,9 @@ void AMonAIController::OnTargetDetected(AActor* _Target, FAIStimulus _Stimulus)
 		static FAISenseID DamageId = UAISense::GetSenseID<UAISense_Damage>();
 
 		if (Info->IsSensed && _Stimulus.Type == SightId)
-			Info->AggroValue += 10.f;
+			Info->AggroValue += 10.f;	// 시야 인지 어그로 10
 		else if (_Stimulus.Type == DamageId)
-			Info->AggroValue += 20.f;
+			Info->AggroValue += 20.f;	// 데미지 인지 어그로 20
 	}
 }
 

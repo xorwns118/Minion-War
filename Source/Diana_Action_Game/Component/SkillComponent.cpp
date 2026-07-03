@@ -11,16 +11,22 @@
 #include "Kismet/KismetSystemLibrary.h"
 
 #include "NiagaraFunctionLibrary.h"
-#include "Components/SkeletalMeshComponent.h"
 #include "GenericTeamAgentInterface.h"
 
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+#include "Engine/OverlapResult.h"
 
 #include "../Container/InputContainer.h"
 #include "../Projectile/Projectile.h"
 #include "../Data/SkillDataBase.h"
 #include "../Data/SkillData_Projectile.h"
+#include "../Data/SkillData_AoEAttack.h"
+
+#include "../Actor/Monster/Monster.h"
 
 USkillComponent::USkillComponent()
 {
@@ -42,9 +48,14 @@ void USkillComponent::BeginPlay()
 
 	ACharacter* Character = Cast<ACharacter>(GetOwner());
 	if (Character != nullptr)
+	{
 		BaseMoveSpeed = Character->GetCharacterMovement()->MaxWalkSpeed;
+		BaseYawRotateSpeed = Character->GetCharacterMovement()->RotationRate.Yaw;
+	}
 	else
+	{
 		UE_LOG(LogTemp, Error, TEXT("Owner does not character!! please check class"));
+	}
 }
 
 void USkillComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -81,16 +92,14 @@ void USkillComponent::Bind(UEnhancedInputComponent* _EIC, UInputContainer* _Inpu
 bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 {
 	if (!SkillLoaded)
-	{
 		return false;
-	}
 
 	if (!IsValid(SkillSlots[_SlotIdx].SkillData.Get()))
-	{
 		return false;
-	}
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+	if (OwnerPawn == nullptr)
+		return false;
 
 	if (SkillSlots[_SlotIdx].SkillData->CanUseSkill(OwnerPawn, this))
 	{
@@ -98,20 +107,19 @@ bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 		{
 			if (SkillSlots[_SlotIdx].SkillData->CanUseSkill(Cast<APawn>(GetOwner()), this))
 			{
-				// 콤보 초기화
 				IsComboWindowOn = false;
 				CurComboIdx = 0;
 
-				// 현재 사용중인 스킬 등록
 				CurSkillData = SkillSlots[_SlotIdx].SkillData;
 
-				// 스킬 실행
 				CurSkillData->OnExecuteSkill(Cast<APawn>(GetOwner()), this);
 
 				return true;
 			}
 			else
+			{
 				return false;
+			}
 		}
 		else if (SkillSlots[_SlotIdx].SkillData == CurSkillData)
 		{
@@ -121,20 +129,30 @@ bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 
 				FName NextSection = *FString::Printf(TEXT("Attack%d"), CurComboIdx);
 
-				if (SkeletalMeshCom && SkeletalMeshCom->GetAnimInstance() && SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage())
+				if (SkeletalMeshCom == nullptr)
 				{
-					if (SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage()->GetSectionIndex(NextSection) != INDEX_NONE)
-					{
-						SkeletalMeshCom->GetAnimInstance()->Montage_JumpToSection(NextSection);
-						IsComboWindowOn = false;
+					UE_LOG(LogTemp, Error, TEXT("Invalid Skeletal Mesh"));
+					return false;
+				}
 
-						return true;
-					}
-					else
-					{
-						UE_LOG(LogTemp, Error, TEXT("Invalid montage section : %s"), *NextSection.ToString());
-						return false;
-					}
+				if (SkeletalMeshCom->GetAnimInstance() == nullptr)
+				{
+					UE_LOG(LogTemp, Error, TEXT("Invalid Anim Instance"));
+					return false;
+				}
+
+				if (SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage() == nullptr)
+				{
+					UE_LOG(LogTemp, Error, TEXT("Invalid Current Active Montage : %s"), *CurSkillData->Montage->GetName());
+					return false;
+				}
+
+				if (SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage()->GetSectionIndex(NextSection) != INDEX_NONE)
+				{
+					SkeletalMeshCom->GetAnimInstance()->Montage_JumpToSection(NextSection);
+					IsComboWindowOn = false;
+
+					return true;
 				}
 			}
 		}
@@ -148,42 +166,28 @@ void USkillComponent::SkillStart()
 	if (CurSkillData == nullptr)
 		return;
 
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
-
-	if (Character == nullptr)
-		return;
-
-	if (!CurSkillData->CanMove)
-		Character->GetCharacterMovement()->MaxWalkSpeed = 0.f;
-	else
-		Character->GetCharacterMovement()->MaxWalkSpeed *= CurSkillData->MoveSpeedScale;
-
 	if (CurSkillData->StartEffect != nullptr)
 	{
+		FVector SpawnLocation = FVector();
+		FRotator SpawnRotation = FRotator();
+
 		if (!SkeletalMeshCom->DoesSocketExist(CurSkillData->StartSocketName)) // Socket 없을 시 캐릭터의 위치에 이펙트 소환
 		{
-			FVector vLocation = Character->GetActorLocation();
-			vLocation.Z = 0.f; // 바닥 유지
-
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				CurSkillData->StartEffect,
-				vLocation,
-				FRotator()
-			);
+			SpawnLocation = GetOwner()->GetActorLocation();
+			SpawnLocation.Z = 0.f; // 바닥 유지
 		}
 		else
 		{
-			FVector CurSocketLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->StartSocketName);
-			FRotator BoxRotation = SkeletalMeshCom->GetSocketRotation(CurSkillData->StartSocketName);
-
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
-				CurSkillData->StartEffect,
-				CurSocketLocation,
-				BoxRotation
-			);
+			SpawnLocation = SkeletalMeshCom->GetSocketLocation(CurSkillData->StartSocketName);
+			SpawnRotation = SkeletalMeshCom->GetSocketRotation(CurSkillData->StartSocketName);
 		}
+
+		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+			GetWorld(),
+			CurSkillData->StartEffect,
+			SpawnLocation,
+			FRotator()
+		);
 	}
 }
 
@@ -192,12 +196,10 @@ void USkillComponent::SkillEnd()
 	if (CurSkillData == nullptr)
 		return;
 
-	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 
-	if (Character == nullptr)
-		return;
-
-	Character->GetCharacterMovement()->MaxWalkSpeed = BaseMoveSpeed;
+	if (OwnerPawn)
+		CurSkillData->OnEndSkill(OwnerPawn, this);
 
 	CurSkillData = nullptr;
 }
@@ -305,14 +307,17 @@ void USkillComponent::HitTraceBySocketName(FName _SocketName)
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(GetOwner());
 
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+
 	FCollisionShape Shape = FCollisionShape::MakeBox(CurSkillData->BoxSize);
 
-	bool bIsHit = GetWorld()->SweepMultiByChannel(
+	bool bIsHit = GetWorld()->SweepMultiByObjectType(
 		HitResults,
 		PrevSocketLocation[_SocketName],
 		CurSocketLocation,
 		BoxQuat,
-		ECC_WorldDynamic,
+		ObjectParams,
 		Shape,
 		Params
 	);
@@ -326,6 +331,8 @@ void USkillComponent::HitTraceBySocketName(FName _SocketName)
 			if (HitActor && !HitActors.Contains(HitActor))
 			{
 				HitActors.Add(HitActor);
+				if (Cast<APawn>(HitActor) == nullptr)
+					continue;
 
 				// 같은 팀인지 확인하는 과정 추가 필요 - 테스트 후 구현
 				UGameplayStatics::ApplyDamage(
@@ -383,6 +390,164 @@ void USkillComponent::SpawnProjectile()
 	);
 
 	SpawnedProjectile->SetData(ProjData);
+}
+
+void USkillComponent::DianaUltimate_Start()
+{
+	if (CurSkillData == nullptr)
+		return;
+
+	USkillData_AoEAttack* AoEData = Cast<USkillData_AoEAttack>(CurSkillData.Get());
+	if (AoEData == nullptr)
+		return;
+
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+
+	FCollisionObjectQueryParams ObjectParams;
+	ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+
+	FVector Center = Cast<APawn>(GetOwner())->GetActorLocation() + AoEData->LocationOffset;
+	// 캐릭터의 발 아래 위치로
+	Center.Z -= Cast<ACharacter>(GetOwner())->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+
+	FCollisionShape Shape = FCollisionShape::MakeSphere(AoEData->HitRadius);
+
+	bool bFind = GetWorld()->OverlapMultiByObjectType(
+		OverlapResults,
+		Center,
+		FQuat::Identity,
+		ObjectParams,
+		Shape,
+		Params
+	);
+
+	TArray<AActor*> Targets;
+
+	if (bFind)
+	{
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			AActor* HitActor = Result.GetActor();
+			if (HitActor && !Targets.Contains(HitActor))
+				Targets.Add(HitActor);
+		}
+	}
+
+	if (AoEData->IsPullToCenter)
+	{
+		for (const auto& Target : Targets)
+		{
+			ACharacter* Char = Cast<ACharacter>(Target);
+			if (Char == nullptr)
+				continue;
+
+			FVector TargetLocation = Target->GetActorLocation();
+
+			// 평면 벡터, 정규화
+			FVector DirToCenter = Center - TargetLocation;
+			DirToCenter.Z = 0.0f;
+			
+			// 겹쳐있는 적 무시
+			float CurrentDistance = DirToCenter.Size();
+			if (CurrentDistance <= 0.f)
+				continue;
+
+			DirToCenter.Normalize();
+
+			// 멀리 있을수록 가하는 힘 증가
+			float DynamicForce = AoEData->Force * FMath::Clamp(CurrentDistance / AoEData->HitRadius, 0.0f, 1.0f);
+
+			// 가할 힘 + 에어본 수치
+			FVector LaunchVelocity = DirToCenter * DynamicForce;
+			LaunchVelocity.Z = AoEData->AirborneValue;
+
+			// 상대의 속도를 완전히 없애 강제로 끌어옴
+			Char->GetCharacterMovement()->StopMovementImmediately();
+
+			Char->LaunchCharacter(LaunchVelocity, true, true);
+		}
+	}
+	else if (AoEData->IsPushFromCenter)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Push From Center"));
+	}
+
+	// DrawDebugSphere(GetWorld(), Center, AoEData->HitRadius, 10, FColor::Red, false, 2.5f);
+}
+
+void USkillComponent::DianaUltimate_End()
+{
+	if (CurSkillData == nullptr)
+		return;
+
+	USkillData_AoEAttack* AoEData = Cast<USkillData_AoEAttack>(CurSkillData.Get());
+	if (AoEData == nullptr)
+		return;
+
+	FVector Center = GetOwner()->GetActorLocation() + AoEData->LocationOffset;
+
+	// 중심점 기준 정해진 반경 안의 Target 모음
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+
+	TArray<AActor*> Targets;
+
+	FCollisionShape Shape = FCollisionShape::MakeSphere(AoEData->HitRadius);
+
+	bool bFind = GetWorld()->OverlapMultiByChannel(
+		OverlapResults,
+		Center,
+		FQuat::Identity,
+		ECollisionChannel::ECC_Pawn,
+		Shape,
+		Params
+	);
+
+	APawn* OwnerPawn = Cast<APawn>(GetOwner());
+
+	// 찾은 대상들에게 이펙트 남김, (각각의 대상에 대한 처리가 필요없다면 제거 가능)
+	if (bFind)
+	{
+		for (const FOverlapResult& Result : OverlapResults)
+		{
+			AActor* HitActor = Result.GetActor();
+			if (HitActor && !Targets.Contains(HitActor))
+			{
+				Targets.Add(HitActor);
+
+				if (AoEData->HitEffect)
+				{
+					UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+						GetWorld(),
+						CurSkillData->HitEffect,
+						HitActor->GetActorLocation(),
+						FRotator()
+					);
+				}
+			}
+		}
+
+		TArray<AActor*> IgnoreActors;
+		IgnoreActors.Add(GetOwner());
+		// 같은 팀도 무시 할 수 있도록 추가 로직 필요
+
+		UGameplayStatics::ApplyRadialDamage(
+			GetWorld(),
+			AoEData->Damage,
+			Center,
+			AoEData->HitRadius,
+			UDamageType::StaticClass(),
+			IgnoreActors,
+			GetOwner(),
+			OwnerPawn->GetController(),
+			true
+		);
+	}
+
+	// DrawDebugSphere(GetWorld(), Center, AoEData->HitRadius, 10, FColor::Red, false, 2.5);
 }
 
 bool USkillComponent::IsValidSocket(USkeletalMeshComponent* _SkeletalMeshCom, FName _Name)

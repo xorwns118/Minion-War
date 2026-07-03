@@ -3,6 +3,9 @@
 
 #include "SkillData_AoEAttack.h"
 
+#include "Kismet/GameplayStatics.h"
+#include "Engine/OverlapResult.h"
+
 bool USkillData_AoEAttack::CanUseSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
 	if (!Super::CanUseSkill_Implementation(_SkillUser, _SkillCom))
@@ -18,4 +21,5 @@ void USkillData_AoEAttack::OnExecuteSkill_Implementation(APawn* _SkillUser, USki
 
 void USkillData_AoEAttack::OnEndSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
+	Super::OnEndSkill_Implementation(_SkillUser, _SkillCom);
 }

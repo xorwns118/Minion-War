@@ -86,6 +86,9 @@ public:
 	float MoveSpeedScale;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
+	float RotateSpeedScale;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Info")
 	float Damage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|HitBox")

@@ -18,4 +18,5 @@ void USkillData_Buff::OnExecuteSkill_Implementation(APawn* _SkillUser, USkillCom
 
 void USkillData_Buff::OnEndSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
+	Super::OnEndSkill_Implementation(_SkillUser, _SkillCom);
 }
