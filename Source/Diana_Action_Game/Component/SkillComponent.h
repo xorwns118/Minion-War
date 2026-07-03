@@ -58,6 +58,7 @@ private:
 	TMap<FName, FVector>			PrevSocketLocation;
 	
 	float							BaseMoveSpeed;
+	float							BaseYawRotateSpeed;
 
 protected:
 	virtual void BeginPlay() override;
@@ -94,6 +95,9 @@ public:
 		return mapSkillCoolTime[_Id] + _MaxCoolTime - GetWorld()->GetTimeSeconds();
 	}
 
+	float GetBaseMoveSpeed() { return BaseMoveSpeed; }
+	float GetBaseYawRotateSpeed() { return BaseYawRotateSpeed; }
+
 
 private:
 	bool SkillLoaded = false;
@@ -116,6 +120,10 @@ public:
 	void HitTraceBySocketName(FName _SocketName);
 
 	void SpawnProjectile();
+
+	// 나중에 분리 필요, Component 와 Data 사이에 실질적인 구현부가 필요 할 것 같음
+	void DianaUltimate_Start();
+	void DianaUltimate_End();
 
 protected:
 	bool IsValidSocket(class USkeletalMeshComponent* _SkeletalMeshCom, FName _Name);

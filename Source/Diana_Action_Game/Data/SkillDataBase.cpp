@@ -4,6 +4,7 @@
 #include "SkillDataBase.h"
 
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Animation/AnimInstance.h"
 
 #include "../Component/SkillComponent.h"
@@ -31,9 +32,23 @@ void USkillDataBase::OnExecuteSkill_Implementation(APawn* _SkillUser, USkillComp
 	if (Character == nullptr)
 		return;
 
+	if (CanMove)
+		Character->GetCharacterMovement()->MaxWalkSpeed *= MoveSpeedScale;
+	else
+		Character->GetCharacterMovement()->MaxWalkSpeed *= 0;
+
+	Character->GetCharacterMovement()->RotationRate.Yaw *= RotateSpeedScale;
+
 	Character->GetMesh()->GetAnimInstance()->Montage_Play(_SkillCom->GetCurSkillData()->Montage);
 }
 
 void USkillDataBase::OnEndSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
+	ACharacter* Character = Cast<ACharacter>(_SkillUser);
+
+	if (Character == nullptr)
+		return;
+
+	Character->GetCharacterMovement()->MaxWalkSpeed = _SkillCom->GetBaseMoveSpeed();
+	Character->GetCharacterMovement()->RotationRate.Yaw = _SkillCom->GetBaseYawRotateSpeed();
 }

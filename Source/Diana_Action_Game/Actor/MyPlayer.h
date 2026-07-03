@@ -28,12 +28,19 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"), Instanced)
 	class UInputContainer* InputContainer;
 	
-	float BaseMoveSpeed;
+	float			BaseMoveSpeed;
 
-	FGenericTeamId TeamId;
+	FGenericTeamId	TeamId;
+
+	bool			IsCC;
 
 public:
+	
+public:
 	class USkillComponent* GetSkillCom() { return SkillCom; }
+
+	void SetCrowdControlled(bool _IsCC) { IsCC = _IsCC; }
+	bool IsCrowdControlled() { return IsCC; }
 
 protected:
 	virtual void BeginPlay() override;

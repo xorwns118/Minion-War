@@ -18,4 +18,5 @@ void USkillData_Projectile::OnExecuteSkill_Implementation(APawn* _SkillUser, USk
 
 void USkillData_Projectile::OnEndSkill_Implementation(APawn* _SkillUser, USkillComponent* _SkillCom)
 {
+	Super::OnEndSkill_Implementation(_SkillUser, _SkillCom);
 }

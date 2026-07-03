@@ -13,7 +13,13 @@ class DIANA_ACTION_GAME_API AMonster : public ANPC
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatComponent")
-	class UMonStatComponent* StatCom;
+	class UMonStatComponent*	StatCom;
+
+	bool						IsCC; // 군중 제어
+
+public:
+	void SetCrowdControlled(bool _IsCC) { IsCC = _IsCC; }
+	bool IsCrowdControlled() { return IsCC; }
 
 protected:
 	virtual void BeginPlay() override;

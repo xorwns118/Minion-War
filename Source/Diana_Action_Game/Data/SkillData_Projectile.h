@@ -22,7 +22,10 @@ public:
 	bool IsHitExplosion;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Projectile", meta = (EditCondition = "IsHitExplosion"))
-	float DamageRadius; // 마지막 타격 시 주변부 데미지, 피격된 사람만이면 Radius 0
+	float DamageRadius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|Projectile", meta = (EditCondition = "IsHitExplosion"))
+	class UNiagaraSystem* ExplosionEffect;
 
 public:
 	virtual bool CanUseSkill_Implementation(class APawn* _SkillUser, class USkillComponent* _SkillCom);

@@ -16,10 +16,6 @@ AMonster::AMonster()
 
 	GetCharacterMovement()->MaxWalkSpeed = 420.f;
 
-	AIControllerClass = AMonAIController::StaticClass();
-
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-
 	StatCom = CreateDefaultSubobject<UMonStatComponent>(TEXT("StatComponent"));
 }
 

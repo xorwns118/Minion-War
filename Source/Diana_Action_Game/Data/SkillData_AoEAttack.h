@@ -13,10 +13,22 @@ class DIANA_ACTION_GAME_API USkillData_AoEAttack : public USkillDataBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE")
-	float HitRadius;
+	float	HitRadius;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE")
 	FVector LocationOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE|Hit")
+	bool	IsPullToCenter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE|Hit")
+	bool	IsPushFromCenter;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE|Hit")
+	float	Force;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill|AoE|Hit")
+	float	AirborneValue;
 
 public:
 	virtual bool CanUseSkill_Implementation(class APawn* _SkillUser, class USkillComponent* _SkillCom);

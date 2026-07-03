@@ -14,7 +14,7 @@ void UANS_HitCheck::NotifyBegin(USkeletalMeshComponent* _MeshCom, UAnimSequenceB
 	if (Character == nullptr)
 		return;
 
-	USkillComponent* SkillCom = Character->FindComponentByClass<USkillComponent>();
+	USkillComponent* SkillCom = Character->GetComponentByClass<USkillComponent>();
 	if (SkillCom == nullptr)
 		return;
 
@@ -29,7 +29,7 @@ void UANS_HitCheck::NotifyTick(USkeletalMeshComponent* _MeshCom, UAnimSequenceBa
 	if (Character == nullptr)
 		return;
 
-	USkillComponent* SkillCom = Character->FindComponentByClass<USkillComponent>();
+	USkillComponent* SkillCom = Character->GetComponentByClass<USkillComponent>();
 	if (SkillCom == nullptr)
 		return;
 
@@ -44,7 +44,7 @@ void UANS_HitCheck::NotifyEnd(USkeletalMeshComponent* _MeshCom, UAnimSequenceBas
 	if (Character == nullptr)
 		return;
 
-	USkillComponent* SkillCom = Character->FindComponentByClass<USkillComponent>();
+	USkillComponent* SkillCom = Character->GetComponentByClass<USkillComponent>();
 	if (SkillCom == nullptr)
 		return;
 

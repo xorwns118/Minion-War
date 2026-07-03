@@ -73,10 +73,6 @@ void AProjectile::ProjHit(AActor* _DamagedActor)
         );
     }
 
-    HitActors.Add(this);
-    HitActors.Add(GetOwner());
-    HitActors.Add(_DamagedActor);
-
     UGameplayStatics::ApplyDamage(
         _DamagedActor,
         ProjData->Damage,
@@ -85,12 +81,14 @@ void AProjectile::ProjHit(AActor* _DamagedActor)
         UDamageType::StaticClass()
     );
 
+    HitActors.Add(_DamagedActor);
+
     DrawDebugSphere(GetWorld(), GetActorLocation(), CollisionCom->GetScaledSphereRadius(), 10, FColor::Red);
 }
 
 void AProjectile::OnProjectileOverlap(UPrimitiveComponent* _OverlappedCom, AActor* _OtherActor, UPrimitiveComponent* _OtherCom, int32 _OtherBodyIndex, bool _bFromSweep, const FHitResult& _SweepResult)
 {
-    if (_OtherActor && _OtherActor != this && _OtherActor != GetOwner())
+    if (_OtherActor && Cast<APawn>(_OtherActor) && _OtherActor != this && _OtherActor != GetOwner())
         ProjHit(_OtherActor);
 }
 
@@ -107,11 +105,11 @@ void AProjectile::ExplodeAndHide()
     if (ProjData == nullptr)
         return;
 
-    if (ProjData->EndEffect)
+    if (ProjData->ExplosionEffect)
     {
         UNiagaraFunctionLibrary::SpawnSystemAtLocation(
             GetWorld(),
-            ProjData->EndEffect,
+            ProjData->ExplosionEffect,
             GetActorLocation(),
             FRotator()
         );
@@ -125,37 +123,32 @@ void AProjectile::ExplodeAndHide()
     Params.AddIgnoredActor(this);
     Params.AddIgnoredActor(GetOwner());
 
+    FCollisionObjectQueryParams ObjectParams;
+    ObjectParams.AddObjectTypesToQuery(ECC_Pawn);
+
     FCollisionShape Shape = FCollisionShape::MakeSphere(ProjData->DamageRadius);
 
-    bool bHit = GetWorld()->OverlapMultiByChannel(
+    bool bFind = GetWorld()->OverlapMultiByObjectType(
         OverlapResults,
         GetActorLocation(),
         FQuat::Identity,
-        ECollisionChannel::ECC_Pawn,
+        ObjectParams,
         Shape,
         Params
     );
 
-    if (bHit)
+    TArray<AActor*> ExplosionTargets;
+
+    if (bFind)
     {
         for (const FOverlapResult& Result : OverlapResults)
         {
             AActor* HitActor = Result.GetActor();
-            if (HitActor && !HitActors.Contains(HitActor))
-            {
-                HitActors.Add(HitActor);
 
-                UGameplayStatics::ApplyRadialDamage(
-                    GetWorld(),
-                    ProjData->Damage,
-                    GetActorLocation(),
-                    ProjData->DamageRadius,
-                    UDamageType::StaticClass(),
-                    HitActors,
-                    this,
-                    GetInstigatorController(),
-                    true
-                );
+            // 투사체가 지나가면서 이미 맞은 적 제외 + Pawn 타입이 아니면 무시
+            if (HitActor && Cast<APawn>(HitActor) && !HitActors.Contains(HitActor) && !ExplosionTargets.Contains(HitActor))
+            {
+                ExplosionTargets.Add(HitActor);
 
                 if (ProjData->HitEffect != nullptr)
                 {
@@ -165,10 +158,33 @@ void AProjectile::ExplodeAndHide()
                         HitActor->GetActorLocation(),
                         HitActor->GetActorRotation()
                     );
+
+                    UE_LOG(LogTemp, Warning, TEXT("Spawn Niagara : X : %f, Y %f: , Z : %f - HitActorName : %s"),
+                        HitActor->GetActorLocation().X,
+                        HitActor->GetActorLocation().Y,
+                        HitActor->GetActorLocation().Z,
+                        *HitActor->GetActorNameOrLabel()
+                    );
                 }
             }
         }
     }
+
+    TArray<AActor*> IgnoreActors;
+    IgnoreActors.Add(this);
+    IgnoreActors.Add(GetOwner());
+
+    UGameplayStatics::ApplyRadialDamage(
+        GetWorld(),
+        ProjData->Damage,
+        GetActorLocation(),
+        ProjData->DamageRadius,
+        UDamageType::StaticClass(),
+        IgnoreActors,
+        this,
+        GetInstigatorController(),
+        true
+    );
 
     DrawDebugSphere(GetWorld(), GetActorLocation(), ProjData->DamageRadius, 10, FColor::Red);
 }
