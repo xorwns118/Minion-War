@@ -15,10 +15,7 @@ public:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& _OwnerCom, uint8* _NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent& _OwnerCom, uint8* _NodeMemory, float _DeltaSeconds) override;
 
-	virtual uint16 GetInstanceMemorySize() const override
-	{
-		return sizeof(FVector);
-	}
+	virtual uint16 GetInstanceMemorySize() const override { return sizeof(FVector); }
 
 public:
 	UTask_RandomMove();

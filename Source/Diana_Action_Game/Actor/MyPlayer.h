@@ -14,19 +14,22 @@ class DIANA_ACTION_GAME_API AMyPlayer : public ACharacter, public IGenericTeamAg
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "SpringArm"))
-	class USpringArmComponent* SpringArmCom;
+	class USpringArmComponent*	SpringArmCom;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "CameraComponent"))
-	class UCameraComponent* CameraCom;
+	class UCameraComponent*		CameraCom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (DisplayName = "SkillComponent"))
-	class USkillComponent* SkillCom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "SkillComponent"))
+	class USkillComponent*		SkillCom;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatComponent")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "StatComponent"))
 	class UPlayerStatComponent* StatCom;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "BuffComponent"))
+	class UBuffComponent*		BuffCom;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"), Instanced)
-	class UInputContainer* InputContainer;
+	class UInputContainer*		InputContainer;
 	
 	float			BaseMoveSpeed;
 
@@ -38,6 +41,7 @@ public:
 	
 public:
 	class USkillComponent* GetSkillCom() { return SkillCom; }
+	class UBuffComponent* GetBuffCom() { return BuffCom; }
 
 	void SetCrowdControlled(bool _IsCC) { IsCC = _IsCC; }
 	bool IsCrowdControlled() { return IsCC; }
