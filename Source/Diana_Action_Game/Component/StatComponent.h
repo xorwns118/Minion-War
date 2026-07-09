@@ -29,6 +29,8 @@ public:
 			return 0.f;
 	}
 
+	float ApplyDamage(float _AmountDamage);
+
 protected:
 	void InitStatFromStruct(UScriptStruct* _InStruct, const void* _StructPtr);
 

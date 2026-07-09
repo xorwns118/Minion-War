@@ -92,5 +92,6 @@ void UTask_RandomMove::TickTask(UBehaviorTreeComponent& _OwnerCom, uint8* _NodeM
     if (AIController->GetMoveStatus() == EPathFollowingStatus::Idle)
     {
         FinishLatentTask(_OwnerCom, EBTNodeResult::Failed);
+        return;
     }
 }

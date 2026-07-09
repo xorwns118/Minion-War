@@ -12,7 +12,7 @@ class DIANA_ACTION_GAME_API AMonster : public ANPC
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatComponent")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "StatComponent"))
 	class UMonStatComponent*	StatCom;
 
 	bool						IsCC; // 군중 제어

@@ -7,6 +7,8 @@
 #include "Components/CapsuleComponent.h"
 
 #include "../Component/SkillComponent.h"
+#include "../Component/BuffComponent.h"
+#include "../Component/StatComponent.h"
 
 ANPC::ANPC()
 {
@@ -18,6 +20,7 @@ ANPC::ANPC()
 	GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -95.f));
 
 	SkillCom = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
+	BuffCom = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 300.0f, 0.0f);
@@ -57,7 +60,13 @@ float ANPC::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEvent, AC
 	Super::TakeDamage(_DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
 
 	float Damage = _DamageAmount;
+	float ApplyDamage = Damage;
 
-	UE_LOG(LogTemp, Warning, TEXT("%s, Take Damage %f"), *GetActorNameOrLabel(), Damage);
+	UStatComponent* StatCom = GetComponentByClass<UStatComponent>();
+
+	if (StatCom)
+		ApplyDamage = StatCom->ApplyDamage(Damage);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s\nOrigin Damge : %f\nApplyDamage : %f"), *GetActorNameOrLabel(), Damage, ApplyDamage);
 	return Damage;
 }

@@ -25,6 +25,9 @@
 #include "../Data/SkillDataBase.h"
 #include "../Data/SkillData_Projectile.h"
 #include "../Data/SkillData_AoEAttack.h"
+#include "../Data/SkillData_Buff.h"
+
+#include "../Component/BuffComponent.h"
 
 #include "../Actor/Monster/Monster.h"
 
@@ -166,7 +169,7 @@ void USkillComponent::SkillStart()
 	if (CurSkillData == nullptr)
 		return;
 
-	if (CurSkillData->StartEffect != nullptr)
+	if (CurSkillData->StartEffect)
 	{
 		FVector SpawnLocation = FVector();
 		FRotator SpawnRotation = FRotator();
@@ -548,6 +551,28 @@ void USkillComponent::DianaUltimate_End()
 	}
 
 	// DrawDebugSphere(GetWorld(), Center, AoEData->HitRadius, 10, FColor::Red, false, 2.5);
+}
+
+void USkillComponent::DianaShield()
+{
+	if (CurSkillData == nullptr)
+		return;
+
+	USkillData_Buff* BuffData = Cast<USkillData_Buff>(CurSkillData.Get());
+	if (BuffData == nullptr)
+		return;
+
+	UBuffComponent* BuffCom = GetOwner()->GetComponentByClass<UBuffComponent>();
+	if (BuffCom == nullptr)
+		return;
+
+	BuffCom->AddBuff(
+		BuffData->SkillName,
+		EBuffType::Shield,
+		BuffData->BuffDuration,
+		BuffData->Value,
+		BuffData->BuffEffect
+	);
 }
 
 bool USkillComponent::IsValidSocket(USkeletalMeshComponent* _SkeletalMeshCom, FName _Name)

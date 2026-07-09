@@ -125,6 +125,8 @@ public:
 	void DianaUltimate_Start();
 	void DianaUltimate_End();
 
+	void DianaShield();
+
 protected:
 	bool IsValidSocket(class USkeletalMeshComponent* _SkeletalMeshCom, FName _Name);
 

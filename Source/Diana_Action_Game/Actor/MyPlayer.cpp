@@ -15,6 +15,8 @@
 
 #include "../Container/InputContainer.h"
 #include "../Component/SkillComponent.h"
+#include "../Component/StatComponent.h"
+#include "../Component/BuffComponent.h"
 #include "../Component/PlayerStatComponent.h"
 
 #include "../GlobalEnum.h"
@@ -41,6 +43,8 @@ AMyPlayer::AMyPlayer()
 	SkillCom = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 
 	StatCom = CreateDefaultSubobject<UPlayerStatComponent>(TEXT("StatComponent"));
+
+	BuffCom = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 
 	InputContainer = CreateDefaultSubobject<UInputContainer>(TEXT("InputContainer"));
 
@@ -93,8 +97,12 @@ float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEven
 	Super::TakeDamage(_DamageAmount, _DamageEvent, _EventInstigator, _DamageCauser);
 
 	float Damage = _DamageAmount;
+	float ApplyDamage = Damage;
 
-	UE_LOG(LogTemp, Warning, TEXT("%s, Take Damage %f"), *GetActorNameOrLabel(), Damage);
+	if (StatCom)
+		ApplyDamage = StatCom->ApplyDamage(Damage);
+
+	UE_LOG(LogTemp, Warning, TEXT("%s\nOrigin Damge : %f\nApplyDamage : %f"), *GetActorNameOrLabel(), Damage, ApplyDamage);
 	return Damage;
 }
 

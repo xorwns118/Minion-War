@@ -32,7 +32,48 @@ void UStatComponent::InitStat()
 	if (Value)
 		AddStat(TEXT("CurMP"), Value);
 
+	AddStat(TEXT("Shield"), 0.f);
+
 	Modify();
+}
+
+float UStatComponent::ApplyDamage(float _AmountDamage)
+{
+	float ApplyDamage = _AmountDamage;
+	float ShieldValue = GetStat(TEXT("Shield"));
+	float CurHPValue = GetStat(TEXT("CurHP"));
+	float Def = GetStat(TEXT("Def"));
+
+	// 방어력 적용 데미지
+	ApplyDamage *= (100 / (100 + Def));
+
+	if (ShieldValue > 0.f)
+	{
+		if (ShieldValue >= ApplyDamage)
+		{
+			ShieldValue -= ApplyDamage;
+			ApplyDamage = 0.f;
+		}
+		else
+		{
+			ShieldValue = 0.f;
+			ApplyDamage -= ShieldValue;
+		}
+
+		AddStat(TEXT("Shield"), ShieldValue);
+	}
+
+	if (ApplyDamage > 0.f)
+	{
+		if (CurHPValue > ApplyDamage)
+			CurHPValue -= ApplyDamage;
+		else
+			CurHPValue = 0.f;
+
+		AddStat(TEXT("CurHP"), CurHPValue);
+	}
+
+	return ApplyDamage;
 }
 
 void UStatComponent::InitStatFromStruct(UScriptStruct* _InStruct, const void* _StructPtr)

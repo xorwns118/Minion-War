@@ -13,13 +13,17 @@ class DIANA_ACTION_GAME_API ANPC : public ACharacter, public IGenericTeamAgentIn
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (DisplayName = "SkillComponent"))
-	class USkillComponent* SkillCom;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "SkillComponent"))
+	class USkillComponent*	SkillCom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Component", meta = (DisplayName = "BuffComponent"))
+	class UBuffComponent*	BuffCom;
 
 	FGenericTeamId TeamId;
 
 public:
 	class USkillComponent* GetSkillCom() { return SkillCom; }
+	class UBuffComponent* GetBuffCom() { return BuffCom; }
 
 protected:
 	virtual void BeginPlay() override;
