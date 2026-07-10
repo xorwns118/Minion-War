@@ -33,7 +33,7 @@
 
 USkillComponent::USkillComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	for (uint8 i = 0; i < (uint8)ESkillSlot::End; ++i)
 	{
@@ -138,15 +138,17 @@ bool USkillComponent::TryExecuteSkill(int32 _SlotIdx)
 					return false;
 				}
 
-				if (SkeletalMeshCom->GetAnimInstance() == nullptr)
+				UAnimInstance* AnimInstance = SkeletalMeshCom->GetAnimInstance();
+
+				if (AnimInstance == nullptr)
 				{
 					UE_LOG(LogTemp, Error, TEXT("Invalid Anim Instance"));
 					return false;
 				}
 
-				if (SkeletalMeshCom->GetAnimInstance()->GetCurrentActiveMontage() == nullptr)
+				if (!AnimInstance->Montage_IsPlaying(CurSkillData->Montage))
 				{
-					UE_LOG(LogTemp, Error, TEXT("Invalid Current Active Montage : %s"), *CurSkillData->Montage->GetName());
+					UE_LOG(LogTemp, Error, TEXT("Montage is not playing : %s"), *CurSkillData->Montage->GetName());
 					return false;
 				}
 
