@@ -91,7 +91,7 @@ void UTask_RandomMove::TickTask(UBehaviorTreeComponent& _OwnerCom, uint8* _NodeM
     // 목표지점으로 향하다가 중간에 막힌 경우
     if (AIController->GetMoveStatus() == EPathFollowingStatus::Idle)
     {
-        FinishLatentTask(_OwnerCom, EBTNodeResult::Failed);
+        FinishLatentTask(_OwnerCom, EBTNodeResult::Succeeded);
         return;
     }
 }

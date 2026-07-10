@@ -38,7 +38,7 @@ AMyPlayer::AMyPlayer()
 
 	CameraCom = CreateDefaultSubobject<UCameraComponent>(TEXT("MainCamera"));
 	CameraCom->SetupAttachment(SpringArmCom);
-	CameraCom->bUsePawnControlRotation = true;
+	CameraCom->bUsePawnControlRotation = false;
 
 	SkillCom = CreateDefaultSubobject<USkillComponent>(TEXT("SkillComponent"));
 
@@ -59,6 +59,8 @@ AMyPlayer::AMyPlayer()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 300.0f, 0.0f);
+
+	CamInterpSpeed = 12.f;
 }
 
 void AMyPlayer::BeginPlay()
@@ -72,6 +74,34 @@ void AMyPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (IsCamRecenter)
+	{
+		if (GetController())
+		{
+			const FRotator CurRot = GetController()->GetControlRotation();
+			const FRotator ActorRot = GetActorRotation();
+
+			// 현재 Control Rot 상하 유지, Actor Yaw 로 카메라 조정
+			const FRotator TargetRot = FRotator(CurRot.Pitch, ActorRot.Yaw, 0.f);
+
+			// 끊기듯 회전하지 않게 빠른 속도로 목표로 회전
+			const FRotator NewRot = FMath::RInterpTo(
+				CurRot,
+				TargetRot,
+				GetWorld()->GetDeltaSeconds(),
+				CamInterpSpeed
+			);
+
+			GetController()->SetControlRotation(NewRot);
+
+			if (FMath::Abs(FMath::FindDeltaAngleDegrees(NewRot.Yaw, TargetRot.Yaw)) < 1.f)
+				IsCamRecenter = false;
+		}
+		else
+		{
+			IsCamRecenter = false;
+		}
+	}
 }
 
 void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -87,6 +117,9 @@ void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 		if (const UInputAction* IA = InputContainer->FindIAByName("IA_Look"))
 			EIC->BindAction(IA, ETriggerEvent::Triggered, this, &AMyPlayer::LookAction);
+
+		if (const UInputAction* IA = InputContainer->FindIAByName("IA_RightClick"))
+			EIC->BindAction(IA, ETriggerEvent::Started, this, &AMyPlayer::AimingAction);
 
 		SkillCom->Bind(EIC, InputContainer);
 	}
@@ -144,6 +177,11 @@ void AMyPlayer::LookAction(const FInputActionValue& _Value)
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
+}
+
+void AMyPlayer::AimingAction(const FInputActionValue& _Value)
+{
+	IsCamRecenter = true;
 }
 
 ETeamAttitude::Type AMyPlayer::GetTeamAttitudeTowards(const AActor& _Other) const

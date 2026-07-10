@@ -31,11 +31,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"), Instanced)
 	class UInputContainer*		InputContainer;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CameraSetting")
+	float						CamInterpSpeed;
+
 	float			BaseMoveSpeed;
 
 	FGenericTeamId	TeamId;
 
 	bool			IsCC;
+	bool			IsCamRecenter;
 
 public:
 	
@@ -63,7 +67,7 @@ public:
 public:
 	void MoveAction(const struct FInputActionValue& _Value);
 	void LookAction(const struct FInputActionValue& _Value);
-
+	void AimingAction(const struct FInputActionValue& _Value);
 public:
 	AMyPlayer();
 };
