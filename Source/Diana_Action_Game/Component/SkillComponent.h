@@ -67,6 +67,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 public:
+	const TArray<FSkillSlotInfo>& GetSkillSlots() { return SkillSlots; }
+
 	void UseSkill(int32 _SlotIdx) { TryExecuteSkill(_SlotIdx); }
 	bool TryExecuteSkill(int32 _SlotIdx);
 
