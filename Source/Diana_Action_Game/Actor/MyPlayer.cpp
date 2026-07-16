@@ -3,6 +3,8 @@
 
 #include "MyPlayer.h"
 
+#include "Engine/AssetManager.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
@@ -18,6 +20,12 @@
 #include "../Component/StatComponent.h"
 #include "../Component/BuffComponent.h"
 #include "../Component/PlayerStatComponent.h"
+
+#include "../Data/CharacterData/CharacterDefinition.h"
+#include "../Data/SkillDataBase.h"
+
+#include "Components/WidgetComponent.h"
+#include "../UI/MyHUD.h"
 
 #include "../GlobalEnum.h"
 
@@ -67,6 +75,34 @@ void AMyPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	APlayerController* PC = Cast<APlayerController>(GetController());
+
+	if (PC)
+	{
+		ULocalPlayer* LocalPlayer = PC->GetLocalPlayer();
+
+		UEnhancedInputLocalPlayerSubsystem* SubSystem
+			= LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>();
+
+		CurHUD = CreateWidget<UUserWidget>(PC, HUDWidget);
+
+		if (CurHUD)
+			CurHUD->AddToViewport();
+	}
+
+	if (!CharacterData.IsNull())
+	{
+		FStreamableManager& Streamable = UAssetManager::Get().GetStreamableManager();
+
+		AsyncLoadHandle	= Streamable.RequestAsyncLoad(
+								CharacterData.ToSoftObjectPath(),
+								FStreamableDelegate::CreateUObject(this, &AMyPlayer::CharacterDataLoad)
+							);
+	}
+
+	UpdateHPWidget();
+	UpdateMPWidget();
+
 	SetGenericTeamId((uint8)ETeamType::Player);
 }
 
@@ -102,6 +138,35 @@ void AMyPlayer::Tick(float DeltaTime)
 			IsCamRecenter = false;
 		}
 	}
+
+	if (CurHUD && SkillCom)
+	{
+		UMyHUD* HUD = Cast<UMyHUD>(CurHUD);
+		if (HUD == nullptr)
+			return;
+
+		const TArray<FSkillSlotInfo>& Slots = SkillCom->GetSkillSlots();
+
+		for (int32 i = 0; i < 4; ++i)
+		{
+			const int32 SkillSlotIdx = (int32)ESkillSlot::Skill_1 + i;
+
+			if (!Slots.IsValidIndex(SkillSlotIdx))
+				continue;
+
+			USkillDataBase* SkillData = Slots[SkillSlotIdx].SkillData.Get();
+
+			if (SkillData == nullptr)
+			{
+				HUD->UpdateCooldown(i, 0.f, 0.f);
+				continue;
+			}
+
+			float RemainTime = SkillCom->GetSkillRemainCoolTime(SkillData->GetPrimaryAssetId(), SkillData->CoolTime);
+
+			HUD->UpdateCooldown(i, RemainTime, SkillData->CoolTime);
+		}
+	}
 }
 
 void AMyPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -134,6 +199,8 @@ float AMyPlayer::TakeDamage(float _DamageAmount, FDamageEvent const& _DamageEven
 
 	if (StatCom)
 		ApplyDamage = StatCom->ApplyDamage(Damage);
+
+	UpdateHPWidget();
 
 	UE_LOG(LogTemp, Warning, TEXT("%s\nOrigin Damge : %f\nApplyDamage : %f"), *GetActorNameOrLabel(), Damage, ApplyDamage);
 	return Damage;
@@ -184,6 +251,51 @@ void AMyPlayer::AimingAction(const FInputActionValue& _Value)
 	IsCamRecenter = true;
 }
 
+void AMyPlayer::UpdateHPWidget()
+{
+	if (CurHUD == nullptr)
+		return;
+
+	UMyHUD* HUD = Cast<UMyHUD>(CurHUD);
+	if (HUD == nullptr)
+		return;
+
+	if (StatCom == nullptr)
+		return;
+
+	float HP = StatCom->GetStat(TEXT("CurHP"));
+	float MaxHP = StatCom->GetStat(TEXT("MaxHP"));
+
+	if (HP < 0.f || MaxHP < 0.f)
+		return;
+
+	HUD->UpdateHPBar(HP, MaxHP);
+}
+
+void AMyPlayer::UpdateMPWidget()
+{
+	if (CurHUD == nullptr)
+		return;
+
+	UMyHUD* HUD = Cast<UMyHUD>(CurHUD);
+	if (HUD == nullptr)
+		return;
+
+	if (StatCom == nullptr)
+		return;
+
+	float MP = StatCom->GetStat(TEXT("CurMP"));
+	float MaxMP = StatCom->GetStat(TEXT("MaxMP"));
+
+	if (MP < 0.f || MaxMP < 0.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No decrease in MP"));
+		return;
+	}
+
+	HUD->UpdateMPBar(MP, MaxMP);
+}
+
 ETeamAttitude::Type AMyPlayer::GetTeamAttitudeTowards(const AActor& _Other) const
 {
 	const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(&_Other);
@@ -199,4 +311,58 @@ ETeamAttitude::Type AMyPlayer::GetTeamAttitudeTowards(const AActor& _Other) cons
 	}
 
 	return ETeamAttitude::Neutral;
+}
+
+void AMyPlayer::CharacterDataLoad()
+{
+	if (!AsyncLoadHandle.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Character Data async load handle is invalid"));
+		return;
+	}
+
+	if (AsyncLoadHandle->WasCanceled())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Character Data async load was canceled"));
+		return;
+	}
+
+	if (!AsyncLoadHandle->HasLoadCompleted())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Character Data async load callback fired before completion"));
+		return;
+	}
+
+	if (!IsValid(CharacterData.Get()))
+	{
+		UE_LOG(
+			LogTemp,
+			Error,
+			TEXT("Failed to load Character data asset. Path=%s"),
+			*CharacterData.ToSoftObjectPath().ToString()
+		);
+	}
+	else
+	{
+		UE_LOG(
+			LogTemp,
+			Warning,
+			TEXT("Loaded Character data asset. Asset=%s"),
+			*CharacterData.Get()->GetPathName()
+		);
+
+		if (CurHUD)
+		{
+			UMyHUD* HUD = Cast<UMyHUD>(CurHUD);
+			if (HUD == nullptr)
+			{
+				UE_LOG(LogTemp, Error, TEXT("cannot binding asset to HUD"));
+				return;
+			}
+
+			HUD->SetCharacterData(CharacterData.Get());
+
+			UE_LOG(LogTemp, Warning, TEXT("HUD Image bind complete"));
+		}
+	}
 }

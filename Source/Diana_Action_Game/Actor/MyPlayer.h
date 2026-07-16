@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Blueprint/UserWidget.h"
+#include "Engine/StreamableManager.h"
 #include "GenericTeamAgentInterface.h"
 #include "MyPlayer.generated.h"
 
@@ -34,6 +36,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CameraSetting")
 	float						CamInterpSpeed;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Info")
+	TSoftObjectPtr<class UCharacterDefinition>	CharacterData;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<class UUserWidget>				HUDWidget;
+
+	UPROPERTY()
+	class UUserWidget*							CurHUD;
+
 	float			BaseMoveSpeed;
 
 	FGenericTeamId	TeamId;
@@ -41,7 +52,10 @@ protected:
 	bool			IsCC;
 	bool			IsCamRecenter;
 
-public:
+protected:
+	TSharedPtr<FStreamableHandle> AsyncLoadHandle;
+
+	void CharacterDataLoad();
 	
 public:
 	class USkillComponent* GetSkillCom() { return SkillCom; }
@@ -68,6 +82,11 @@ public:
 	void MoveAction(const struct FInputActionValue& _Value);
 	void LookAction(const struct FInputActionValue& _Value);
 	void AimingAction(const struct FInputActionValue& _Value);
+
+private:
+	void UpdateHPWidget();
+	void UpdateMPWidget();
+
 public:
 	AMyPlayer();
 };
